@@ -70,6 +70,46 @@ h1{font-family:Georgia,serif;font-size:30px;font-weight:700;color:#2C2C2A;margin
   <div id="registerStep" class="card" style="display:none;">
     <div class="learner-badge">Registering for <strong id="learnerName"></strong></div>
 
+    <div class="section-label" style="margin-top:0;">Learner details</div>
+    <div class="form-grid">
+      <div>
+        <label>Date of birth</label>
+        <input type="date" id="regDob">
+      </div>
+      <div>
+        <label>Gender</label>
+        <select id="regGender">
+          <option value="">— Select —</option>
+          <option>Male</option>
+          <option>Female</option>
+        </select>
+      </div>
+      <div>
+        <label>Nationality</label>
+        <input type="text" id="regNationality">
+      </div>
+      <div>
+        <label>First language</label>
+        <input type="text" id="regFirstLanguage">
+      </div>
+      <div>
+        <label>Other languages</label>
+        <input type="text" id="regOtherLanguages">
+      </div>
+      <div>
+        <label>Current school</label>
+        <input type="text" id="regCurrentSchool">
+      </div>
+      <div class="full-width">
+        <label>Previous school</label>
+        <input type="text" id="regPreviousSchool">
+      </div>
+      <div class="full-width">
+        <label>Health / learning notes</label>
+        <input type="text" id="regHealthNotes">
+      </div>
+    </div>
+
     <div class="section-label">Family details</div>
     <div class="form-grid">
       <div class="full-width">
@@ -179,6 +219,15 @@ async function verifyCode(){
     verifiedActivationCode = activationCode;
 
     document.getElementById('learnerName').textContent = `${data.learner.first_name} ${data.learner.last_name}`;
+    document.getElementById('regDob').value = data.learner.date_of_birth || '';
+    document.getElementById('regGender').value = data.learner.gender || '';
+    document.getElementById('regNationality').value = data.learner.nationality || '';
+    document.getElementById('regFirstLanguage').value = data.learner.first_language || '';
+    document.getElementById('regOtherLanguages').value = data.learner.other_languages || '';
+    document.getElementById('regCurrentSchool').value = data.learner.current_school || '';
+    document.getElementById('regPreviousSchool').value = data.learner.previous_school || '';
+    document.getElementById('regHealthNotes').value = data.learner.health_learning_notes || '';
+
     document.getElementById('regFamilyName').value = data.family.family_name || '';
     document.getElementById('regEmail').value = data.family.contact_email || '';
     document.getElementById('regPhone').value = data.family.contact_phone || '';
@@ -230,6 +279,14 @@ async function completeRegistration(){
         student_id_code: verifiedStudentId,
         activation_code: verifiedActivationCode,
         password: password,
+        date_of_birth: document.getElementById('regDob').value,
+        gender: document.getElementById('regGender').value,
+        nationality: document.getElementById('regNationality').value.trim(),
+        first_language: document.getElementById('regFirstLanguage').value.trim(),
+        other_languages: document.getElementById('regOtherLanguages').value.trim(),
+        current_school: document.getElementById('regCurrentSchool').value.trim(),
+        previous_school: document.getElementById('regPreviousSchool').value.trim(),
+        health_learning_notes: document.getElementById('regHealthNotes').value.trim(),
         family_name: document.getElementById('regFamilyName').value.trim(),
         contact_email: email,
         contact_phone: document.getElementById('regPhone').value.trim(),
