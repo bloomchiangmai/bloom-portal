@@ -182,7 +182,7 @@ h1{font-family:Georgia,serif;font-size:32px;font-weight:700;color:#2C2C2A;margin
 
 <script>
 const SUPABASE_URL = 'https://ndlcfgkhxjoancdvmgmr.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_EzlLIeKJDqtMs0mKD0gfgA_C86iHZal';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kbGNmZ2toeGpvYW5jZHZtZ21yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MDYwODUsImV4cCI6MjA5Nzk4MjA4NX0.q0F6_ej0CTneazs6ey7mR3HOsGpqrU0BLe8Y-JHatu8';
 
 // Shared cross-subdomain session storage for Bloom Space Hub (Bloombrary + Calendar + Portal).
 // Must match bloom-library and bloom-calendar's implementation exactly (same storageKey,
@@ -243,22 +243,29 @@ async function changeEmail(){
   btn.disabled = true;
   btn.textContent = 'Sending…';
 
-  const { error } = await sb.auth.updateUser(
-    { email: newEmail },
-    { emailRedirectTo: window.location.origin + '/login.html' }
-  );
+  try {
+    const { error } = await sb.auth.updateUser(
+      { email: newEmail },
+      { emailRedirectTo: window.location.origin + '/dashboard.html?emailUpdated=1' }
+    );
 
-  btn.disabled = false;
-  btn.textContent = 'Send confirmation link';
+    btn.disabled = false;
+    btn.textContent = 'Send confirmation link';
 
-  if(error){
-    errEl.textContent = error.message || 'Could not start email change. Please try again.';
-    return;
+    if(error){
+      const msg = (error && (error.message || error.error_description || error.msg)) || 'Could not start email change. Please try again.';
+      errEl.textContent = msg;
+      return;
+    }
+
+    successEl.textContent = 'Confirmation links have been sent to both your old and new email addresses. Your email will update once you confirm.';
+    successEl.style.display = 'block';
+    document.getElementById('newEmailInput').value = '';
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = 'Send confirmation link';
+    errEl.textContent = (err && err.message) || 'Something went wrong. Please try again.';
   }
-
-  successEl.textContent = 'Confirmation links have been sent to both your old and new email addresses. Your email will update once you confirm.';
-  successEl.style.display = 'block';
-  document.getElementById('newEmailInput').value = '';
 }
 
 async function changePassword(){
@@ -406,6 +413,29 @@ async function saveContactInfo(){
   document.getElementById('familyName').textContent = familyName;
   successEl.textContent = 'Changes saved.';
   successEl.style.display = 'block';
+}
+
+let emailBannerShown = false;
+
+function showEmailUpdatedBanner(){
+  if(emailBannerShown) return;
+  emailBannerShown = true;
+  const banner = document.createElement('div');
+  banner.textContent = 'Your email has been updated successfully.';
+  banner.style.cssText = 'background:#D8F0DE;color:#1F6B36;border:1px solid #b8ddc2;border-radius:8px;padding:14px 18px;margin-bottom:24px;font-size:14px;text-align:center;';
+  const main = document.querySelector('main');
+  main.insertBefore(banner, main.firstChild.nextSibling);
+  window.history.replaceState({}, '', window.location.pathname);
+}
+
+sb.auth.onAuthStateChange((event) => {
+  if(event === 'USER_UPDATED'){
+    showEmailUpdatedBanner();
+  }
+});
+
+if(new URLSearchParams(window.location.search).get('emailUpdated')){
+  showEmailUpdatedBanner();
 }
 
 loadDashboard();
