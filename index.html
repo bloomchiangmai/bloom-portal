@@ -96,14 +96,6 @@ h1{font-family:Georgia,serif;font-size:30px;font-weight:700;color:#2C2C2A;margin
         <label>Other languages</label>
         <input type="text" id="regOtherLanguages">
       </div>
-      <div>
-        <label>Current school</label>
-        <input type="text" id="regCurrentSchool">
-      </div>
-      <div class="full-width">
-        <label>Previous school</label>
-        <input type="text" id="regPreviousSchool">
-      </div>
       <div class="full-width">
         <label>Health / learning notes</label>
         <input type="text" id="regHealthNotes">
@@ -224,8 +216,6 @@ async function verifyCode(){
     document.getElementById('regNationality').value = data.learner.nationality || '';
     document.getElementById('regFirstLanguage').value = data.learner.first_language || '';
     document.getElementById('regOtherLanguages').value = data.learner.other_languages || '';
-    document.getElementById('regCurrentSchool').value = data.learner.current_school || '';
-    document.getElementById('regPreviousSchool').value = data.learner.previous_school || '';
     document.getElementById('regHealthNotes').value = data.learner.health_learning_notes || '';
 
     document.getElementById('regFamilyName').value = data.family.family_name || '';
@@ -284,8 +274,6 @@ async function completeRegistration(){
         nationality: document.getElementById('regNationality').value.trim(),
         first_language: document.getElementById('regFirstLanguage').value.trim(),
         other_languages: document.getElementById('regOtherLanguages').value.trim(),
-        current_school: document.getElementById('regCurrentSchool').value.trim(),
-        previous_school: document.getElementById('regPreviousSchool').value.trim(),
         health_learning_notes: document.getElementById('regHealthNotes').value.trim(),
         family_name: document.getElementById('regFamilyName').value.trim(),
         contact_email: email,
