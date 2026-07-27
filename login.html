@@ -42,10 +42,16 @@ input{width:100%;padding:12px 14px;border:1px solid #E8E3D8;border-radius:8px;fo
   <div class="card">
     <label>Email</label>
     <input type="email" id="loginEmail" placeholder="you@example.com">
-    <label>Password</label>
-    <input type="password" id="loginPassword" placeholder="Your password">
+    <div id="passwordFieldWrap">
+      <label>Password</label>
+      <input type="password" id="loginPassword" placeholder="Your password">
+    </div>
     <button class="btn-primary" onclick="doLogin()" id="loginBtn">Sign in</button>
+    <div style="text-align:right;margin-top:-8px;margin-bottom:8px;">
+      <a href="javascript:void(0)" onclick="toggleForgotPassword()" id="forgotToggle" style="font-size:13px;color:#534AB7;text-decoration:none;">Forgot password?</a>
+    </div>
     <div class="error-msg" id="loginError"></div>
+    <div class="success-msg" id="resetSuccessMsg" style="display:none;"></div>
   </div>
 
   <a href="index.html" class="helper-link">Need to activate a new Student ID? Register here</a>
@@ -90,6 +96,64 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     detectSessionInUrl: true
   }
 });
+
+let inForgotMode = false;
+
+function toggleForgotPassword(){
+  inForgotMode = !inForgotMode;
+  const passWrap = document.getElementById('passwordFieldWrap');
+  const btn = document.getElementById('loginBtn');
+  const toggle = document.getElementById('forgotToggle');
+  const errEl = document.getElementById('loginError');
+  const successEl = document.getElementById('resetSuccessMsg');
+
+  errEl.textContent = '';
+  successEl.style.display = 'none';
+
+  if(inForgotMode){
+    passWrap.style.display = 'none';
+    btn.textContent = 'Send reset link';
+    btn.onclick = sendResetLink;
+    toggle.textContent = 'Back to sign in';
+  } else {
+    passWrap.style.display = 'block';
+    btn.textContent = 'Sign in';
+    btn.onclick = doLogin;
+    toggle.textContent = 'Forgot password?';
+  }
+}
+
+async function sendResetLink(){
+  const email = document.getElementById('loginEmail').value.trim();
+  const errEl = document.getElementById('loginError');
+  const successEl = document.getElementById('resetSuccessMsg');
+  const btn = document.getElementById('loginBtn');
+  errEl.textContent = '';
+  successEl.style.display = 'none';
+
+  if(!email){
+    errEl.textContent = 'Please enter your email address.';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+
+  const { error } = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + '/reset-password.html'
+  });
+
+  btn.disabled = false;
+  btn.textContent = 'Send reset link';
+
+  if(error){
+    errEl.textContent = error.message || 'Could not send reset email. Please try again.';
+    return;
+  }
+
+  successEl.textContent = 'If an account exists for that email, a reset link has been sent.';
+  successEl.style.display = 'block';
+}
 
 async function checkExistingSession(){
   const { data: { session } } = await sb.auth.getSession();
