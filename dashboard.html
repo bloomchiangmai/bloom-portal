@@ -20,6 +20,15 @@ h1{font-family:Georgia,serif;font-size:32px;font-weight:700;color:#2C2C2A;margin
 .card{background:#F7F3EC;border:1px solid #E8E3D8;border-radius:12px;padding:28px;margin-bottom:24px;}
 .card h2{font-family:Georgia,serif;font-size:20px;font-weight:700;margin-bottom:20px;color:#2C2C2A;}
 
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
+.form-grid label{display:block;font-size:12px;font-weight:600;color:#5F5E5A;margin-bottom:6px;}
+.form-grid input,.form-grid select{width:100%;padding:10px 12px;border:1px solid #E8E3D8;border-radius:8px;font-size:14px;background:#fff;}
+.full-width{grid-column:1 / -1;}
+.btn-primary-small{padding:12px 24px;border:none;border-radius:8px;background:#534AB7;color:#fff;font-size:14px;font-weight:600;cursor:pointer;}
+.btn-primary-small:hover{background:#443c99;}
+.error-msg{color:#B23A3A;font-size:13px;margin-top:10px;}
+.success-msg{color:#2E7D46;font-size:13px;margin-top:10px;}
+
 .learner-row{display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-bottom:1px solid #E8E3D8;}
 .learner-row:last-child{border-bottom:none;}
 .learner-name{font-family:Georgia,serif;font-size:18px;font-weight:700;}
@@ -32,6 +41,9 @@ h1{font-family:Georgia,serif;font-size:32px;font-weight:700;color:#2C2C2A;margin
 .link-arrow{color:#534AB7;font-size:18px;}
 
 .loading{text-align:center;padding:80px 20px;color:#888780;font-size:14px;}
+@media (max-width: 640px) {
+  .form-grid{grid-template-columns:1fr;}
+}
 </style>
 </head>
 <body>
@@ -52,6 +64,49 @@ h1{font-family:Georgia,serif;font-size:32px;font-weight:700;color:#2C2C2A;margin
     <div class="card">
       <h2>Your children</h2>
       <div id="learnersList"></div>
+    </div>
+
+    <div class="card">
+      <h2>Contact info</h2>
+      <div class="form-grid">
+        <div class="full-width">
+          <label>Family name</label>
+          <input type="text" id="cFamilyName">
+        </div>
+        <div>
+          <label>Phone</label>
+          <input type="text" id="cPhone">
+        </div>
+        <div>
+          <label>Preferred contact method</label>
+          <select id="cPreferredContact">
+            <option value="">— Select —</option>
+            <option>Line</option>
+            <option>WhatsApp</option>
+            <option>WeChat</option>
+            <option>Email</option>
+          </select>
+        </div>
+        <div class="full-width">
+          <label>Line / WeChat ID</label>
+          <input type="text" id="cLineWechat">
+        </div>
+        <div>
+          <label>Emergency contact name</label>
+          <input type="text" id="cEmergencyName">
+        </div>
+        <div>
+          <label>Emergency contact relationship</label>
+          <input type="text" id="cEmergencyRelationship">
+        </div>
+        <div class="full-width">
+          <label>Emergency contact number</label>
+          <input type="text" id="cEmergencyNumber">
+        </div>
+      </div>
+      <button class="btn-primary-small" onclick="saveContactInfo()" id="saveContactBtn">Save changes</button>
+      <div class="error-msg" id="contactError"></div>
+      <div class="success-msg" id="contactSuccess" style="display:none;"></div>
     </div>
 
     <div class="card">
@@ -126,7 +181,7 @@ async function loadDashboard(){
 
   const { data: family, error: famErr } = await sb
     .from('families')
-    .select('id, family_name')
+    .select('id, family_name, contact_phone, intake_data')
     .eq('auth_user_id', session.user.id)
     .maybeSingle();
 
@@ -136,6 +191,18 @@ async function loadDashboard(){
   }
 
   document.getElementById('familyName').textContent = family.family_name || 'your family';
+
+  const famIntake = family.intake_data || {};
+  document.getElementById('cFamilyName').value = family.family_name || '';
+  document.getElementById('cPhone').value = family.contact_phone || '';
+  document.getElementById('cPreferredContact').value = famIntake.preferred_contact || '';
+  document.getElementById('cLineWechat').value = famIntake.line_wechat_id || '';
+  document.getElementById('cEmergencyName').value = famIntake.emergency_name || '';
+  document.getElementById('cEmergencyRelationship').value = famIntake.emergency_relationship || '';
+  document.getElementById('cEmergencyNumber').value = famIntake.emergency_number || '';
+
+  window._currentFamilyId = family.id;
+  window._currentFamilyIntake = famIntake;
 
   const { data: learners, error: learnersErr } = await sb
     .from('students')
@@ -159,6 +226,49 @@ async function loadDashboard(){
 
   document.getElementById('loading').style.display = 'none';
   document.getElementById('content').style.display = 'block';
+}
+
+async function saveContactInfo(){
+  const errEl = document.getElementById('contactError');
+  const successEl = document.getElementById('contactSuccess');
+  const btn = document.getElementById('saveContactBtn');
+  errEl.textContent = '';
+  successEl.style.display = 'none';
+
+  const familyName = document.getElementById('cFamilyName').value.trim();
+  if(!familyName){
+    errEl.textContent = 'Family name is required.';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+
+  const existingIntake = window._currentFamilyIntake || {};
+  const { error } = await sb.from('families').update({
+    family_name: familyName,
+    contact_phone: document.getElementById('cPhone').value.trim() || null,
+    intake_data: {
+      ...existingIntake,
+      preferred_contact: document.getElementById('cPreferredContact').value || null,
+      line_wechat_id: document.getElementById('cLineWechat').value.trim() || null,
+      emergency_name: document.getElementById('cEmergencyName').value.trim() || null,
+      emergency_relationship: document.getElementById('cEmergencyRelationship').value.trim() || null,
+      emergency_number: document.getElementById('cEmergencyNumber').value.trim() || null
+    }
+  }).eq('id', window._currentFamilyId);
+
+  btn.disabled = false;
+  btn.textContent = 'Save changes';
+
+  if(error){
+    errEl.textContent = 'Could not save changes: ' + error.message;
+    return;
+  }
+
+  document.getElementById('familyName').textContent = familyName;
+  successEl.textContent = 'Changes saved.';
+  successEl.style.display = 'block';
 }
 
 loadDashboard();
