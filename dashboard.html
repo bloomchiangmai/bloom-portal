@@ -28,6 +28,7 @@ h1{font-family:Georgia,serif;font-size:32px;font-weight:700;color:#2C2C2A;margin
 .btn-primary-small:hover{background:#443c99;}
 .error-msg{color:#B23A3A;font-size:13px;margin-top:10px;}
 .success-msg{color:#2E7D46;font-size:13px;margin-top:10px;}
+.section-label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#534AB7;margin-bottom:10px;border-bottom:1px solid #E8E3D8;padding-bottom:6px;}
 
 .learner-row{display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-bottom:1px solid #E8E3D8;}
 .learner-row:last-child{border-bottom:none;}
@@ -117,6 +118,45 @@ h1{font-family:Georgia,serif;font-size:32px;font-weight:700;color:#2C2C2A;margin
     </div>
 
     <div class="card">
+      <h2>Account &amp; security</h2>
+
+      <div style="margin-bottom:4px;">
+        <a href="javascript:void(0)" onclick="toggleAccountSecurity()" id="securityToggleLabel" style="font-size:13px;color:#534AB7;text-decoration:underline;cursor:pointer;">Show account settings</a>
+      </div>
+
+      <div id="accountSecuritySection" style="display:none;margin-top:16px;">
+
+        <div class="section-label">Email</div>
+        <p style="font-size:13px;color:#5F5E5A;margin-bottom:12px;">Current: <strong id="currentEmailDisplay"></strong></p>
+        <div class="form-grid">
+          <div class="full-width">
+            <label>New email</label>
+            <input type="email" id="newEmailInput" placeholder="new-email@example.com">
+          </div>
+        </div>
+        <button class="btn-primary-small" onclick="changeEmail()" id="changeEmailBtn">Send confirmation link</button>
+        <div class="error-msg" id="emailChangeError"></div>
+        <div class="success-msg" id="emailChangeSuccess" style="display:none;"></div>
+
+        <div class="section-label" style="margin-top:24px;">Password</div>
+        <div class="form-grid">
+          <div>
+            <label>New password</label>
+            <input type="password" id="newPasswordInput" placeholder="At least 8 characters">
+          </div>
+          <div>
+            <label>Confirm password</label>
+            <input type="password" id="confirmPasswordInput">
+          </div>
+        </div>
+        <button class="btn-primary-small" onclick="changePassword()" id="changePasswordBtn">Update password</button>
+        <div class="error-msg" id="passwordChangeError"></div>
+        <div class="success-msg" id="passwordChangeSuccess" style="display:none;"></div>
+
+      </div>
+    </div>
+
+    <div class="card">
       <h2>Quick links</h2>
       <a class="link-tile" href="https://bloombrary.learn2bloom.org" target="_blank" rel="noopener">
         <div>
@@ -179,6 +219,86 @@ async function doLogout(){
   window.location.href = 'login.html';
 }
 
+function toggleAccountSecurity(){
+  const section = document.getElementById('accountSecuritySection');
+  const label = document.getElementById('securityToggleLabel');
+  const isHidden = section.style.display === 'none';
+  section.style.display = isHidden ? 'block' : 'none';
+  label.textContent = isHidden ? 'Hide account settings' : 'Show account settings';
+}
+
+async function changeEmail(){
+  const errEl = document.getElementById('emailChangeError');
+  const successEl = document.getElementById('emailChangeSuccess');
+  const btn = document.getElementById('changeEmailBtn');
+  errEl.textContent = '';
+  successEl.style.display = 'none';
+
+  const newEmail = document.getElementById('newEmailInput').value.trim();
+  if(!newEmail){
+    errEl.textContent = 'Please enter a new email address.';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+
+  const { error } = await sb.auth.updateUser(
+    { email: newEmail },
+    { emailRedirectTo: window.location.origin + '/login.html' }
+  );
+
+  btn.disabled = false;
+  btn.textContent = 'Send confirmation link';
+
+  if(error){
+    errEl.textContent = error.message || 'Could not start email change. Please try again.';
+    return;
+  }
+
+  successEl.textContent = 'Confirmation links have been sent to both your old and new email addresses. Your email will update once you confirm.';
+  successEl.style.display = 'block';
+  document.getElementById('newEmailInput').value = '';
+}
+
+async function changePassword(){
+  const errEl = document.getElementById('passwordChangeError');
+  const successEl = document.getElementById('passwordChangeSuccess');
+  const btn = document.getElementById('changePasswordBtn');
+  errEl.textContent = '';
+  successEl.style.display = 'none';
+
+  const pass = document.getElementById('newPasswordInput').value;
+  const confirm = document.getElementById('confirmPasswordInput').value;
+
+  if(pass.length < 8){
+    errEl.textContent = 'Password must be at least 8 characters.';
+    return;
+  }
+  if(pass !== confirm){
+    errEl.textContent = 'Passwords do not match.';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Updating…';
+
+  const { error } = await sb.auth.updateUser({ password: pass });
+
+  btn.disabled = false;
+  btn.textContent = 'Update password';
+
+  if(error){
+    errEl.textContent = error.message || 'Could not update password. Please try again.';
+    return;
+  }
+
+  document.getElementById('newPasswordInput').value = '';
+  document.getElementById('confirmPasswordInput').value = '';
+  successEl.textContent = 'Password updated.';
+  successEl.style.display = 'block';
+}
+
 function toggleContactInfo(){
   const section = document.getElementById('contactInfoSection');
   const label = document.getElementById('contactToggleLabel');
@@ -218,6 +338,8 @@ async function loadDashboard(){
 
   window._currentFamilyId = family.id;
   window._currentFamilyIntake = famIntake;
+  window._currentSession = session;
+  document.getElementById('currentEmailDisplay').textContent = session.user.email;
 
   const { data: learners, error: learnersErr } = await sb
     .from('students')
