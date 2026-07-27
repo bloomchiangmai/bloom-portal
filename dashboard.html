@@ -68,45 +68,52 @@ h1{font-family:Georgia,serif;font-size:32px;font-weight:700;color:#2C2C2A;margin
 
     <div class="card">
       <h2>Contact info</h2>
-      <div class="form-grid">
-        <div class="full-width">
-          <label>Family name</label>
-          <input type="text" id="cFamilyName">
-        </div>
-        <div>
-          <label>Phone</label>
-          <input type="text" id="cPhone">
-        </div>
-        <div>
-          <label>Preferred contact method</label>
-          <select id="cPreferredContact">
-            <option value="">— Select —</option>
-            <option>Line</option>
-            <option>WhatsApp</option>
-            <option>WeChat</option>
-            <option>Email</option>
-          </select>
-        </div>
-        <div class="full-width">
-          <label>Line / WeChat ID</label>
-          <input type="text" id="cLineWechat">
-        </div>
-        <div>
-          <label>Emergency contact name</label>
-          <input type="text" id="cEmergencyName">
-        </div>
-        <div>
-          <label>Emergency contact relationship</label>
-          <input type="text" id="cEmergencyRelationship">
-        </div>
-        <div class="full-width">
-          <label>Emergency contact number</label>
-          <input type="text" id="cEmergencyNumber">
-        </div>
+
+      <div id="contactToggleWrap" style="margin-bottom:4px;">
+        <a href="javascript:void(0)" onclick="toggleContactInfo()" id="contactToggleLabel" style="font-size:13px;color:#534AB7;text-decoration:underline;cursor:pointer;">Show contact info</a>
       </div>
-      <button class="btn-primary-small" onclick="saveContactInfo()" id="saveContactBtn">Save changes</button>
-      <div class="error-msg" id="contactError"></div>
-      <div class="success-msg" id="contactSuccess" style="display:none;"></div>
+
+      <div id="contactInfoSection" style="display:none;margin-top:16px;">
+        <div class="form-grid">
+          <div class="full-width">
+            <label>Family name</label>
+            <input type="text" id="cFamilyName">
+          </div>
+          <div>
+            <label>Phone</label>
+            <input type="text" id="cPhone">
+          </div>
+          <div>
+            <label>Preferred contact method</label>
+            <select id="cPreferredContact">
+              <option value="">— Select —</option>
+              <option>Line</option>
+              <option>WhatsApp</option>
+              <option>WeChat</option>
+              <option>Email</option>
+            </select>
+          </div>
+          <div class="full-width">
+            <label>Line / WeChat ID</label>
+            <input type="text" id="cLineWechat">
+          </div>
+          <div>
+            <label>Emergency contact name</label>
+            <input type="text" id="cEmergencyName">
+          </div>
+          <div>
+            <label>Emergency contact relationship</label>
+            <input type="text" id="cEmergencyRelationship">
+          </div>
+          <div class="full-width">
+            <label>Emergency contact number</label>
+            <input type="text" id="cEmergencyNumber">
+          </div>
+        </div>
+        <button class="btn-primary-small" onclick="saveContactInfo()" id="saveContactBtn">Save changes</button>
+        <div class="error-msg" id="contactError"></div>
+        <div class="success-msg" id="contactSuccess" style="display:none;"></div>
+      </div>
     </div>
 
     <div class="card">
@@ -170,6 +177,14 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
 async function doLogout(){
   await sb.auth.signOut();
   window.location.href = 'login.html';
+}
+
+function toggleContactInfo(){
+  const section = document.getElementById('contactInfoSection');
+  const label = document.getElementById('contactToggleLabel');
+  const isHidden = section.style.display === 'none';
+  section.style.display = isHidden ? 'block' : 'none';
+  label.textContent = isHidden ? 'Hide contact info' : 'Show contact info';
 }
 
 async function loadDashboard(){
