@@ -40,8 +40,8 @@ input{width:100%;padding:12px 14px;border:1px solid #E8E3D8;border-radius:8px;fo
   <p class="sub">Access your family's Bloom Chiangmai account.</p>
 
   <div class="card">
-    <label>Email</label>
-    <input type="email" id="loginEmail" placeholder="you@example.com">
+    <label>Student ID</label>
+    <input type="text" id="loginStudentId" placeholder="e.g. BMS26001">
     <div id="passwordFieldWrap">
       <label>Password</label>
       <input type="password" id="loginPassword" placeholder="Your password">
@@ -123,36 +123,57 @@ function toggleForgotPassword(){
   }
 }
 
+async function resolveEmailFromStudentId(studentId){
+  const resp = await fetch(`${SUPABASE_URL}/functions/v1/resolve-login-identity`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ student_id_code: studentId })
+  });
+  const data = await resp.json();
+  if(!resp.ok){
+    throw new Error(data.error || 'Could not find an account for that Student ID.');
+  }
+  return data.email;
+}
+
 async function sendResetLink(){
-  const email = document.getElementById('loginEmail').value.trim();
+  const studentId = document.getElementById('loginStudentId').value.trim();
   const errEl = document.getElementById('loginError');
   const successEl = document.getElementById('resetSuccessMsg');
   const btn = document.getElementById('loginBtn');
   errEl.textContent = '';
   successEl.style.display = 'none';
 
-  if(!email){
-    errEl.textContent = 'Please enter your email address.';
+  if(!studentId){
+    errEl.textContent = 'Please enter your Student ID.';
     return;
   }
 
   btn.disabled = true;
   btn.textContent = 'Sending…';
 
-  const { error } = await sb.auth.resetPasswordForEmail(email, {
-    redirectTo: window.location.origin + '/reset-password.html'
-  });
+  try {
+    const email = await resolveEmailFromStudentId(studentId);
 
-  btn.disabled = false;
-  btn.textContent = 'Send reset link';
+    const { error } = await sb.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + '/reset-password.html'
+    });
 
-  if(error){
-    errEl.textContent = error.message || 'Could not send reset email. Please try again.';
-    return;
+    btn.disabled = false;
+    btn.textContent = 'Send reset link';
+
+    if(error){
+      errEl.textContent = error.message || 'Could not send reset email. Please try again.';
+      return;
+    }
+
+    successEl.textContent = 'A reset link has been sent to the contact email on file for this account.';
+    successEl.style.display = 'block';
+  } catch(err){
+    btn.disabled = false;
+    btn.textContent = 'Send reset link';
+    errEl.textContent = err.message || 'Something went wrong. Please try again.';
   }
-
-  successEl.textContent = 'If an account exists for that email, a reset link has been sent.';
-  successEl.style.display = 'block';
 }
 
 async function checkExistingSession(){
@@ -163,30 +184,37 @@ async function checkExistingSession(){
 }
 
 async function doLogin(){
-  const email = document.getElementById('loginEmail').value.trim();
+  const studentId = document.getElementById('loginStudentId').value.trim();
   const password = document.getElementById('loginPassword').value;
   const errEl = document.getElementById('loginError');
   const btn = document.getElementById('loginBtn');
   errEl.textContent = '';
 
-  if(!email || !password){
-    errEl.textContent = 'Please enter your email and password.';
+  if(!studentId || !password){
+    errEl.textContent = 'Please enter your Student ID and password.';
     return;
   }
 
   btn.disabled = true;
   btn.textContent = 'Signing in…';
 
-  const { error } = await sb.auth.signInWithPassword({ email, password });
+  try {
+    const email = await resolveEmailFromStudentId(studentId);
+    const { error } = await sb.auth.signInWithPassword({ email, password });
 
-  if(error){
-    errEl.textContent = 'Incorrect email or password. Please try again.';
+    if(error){
+      errEl.textContent = 'Incorrect Student ID or password. Please try again.';
+      btn.disabled = false;
+      btn.textContent = 'Sign in';
+      return;
+    }
+
+    window.location.href = 'dashboard.html';
+  } catch(err){
+    errEl.textContent = err.message || 'Incorrect Student ID or password. Please try again.';
     btn.disabled = false;
     btn.textContent = 'Sign in';
-    return;
   }
-
-  window.location.href = 'dashboard.html';
 }
 
 checkExistingSession();
