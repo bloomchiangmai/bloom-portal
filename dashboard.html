@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>My Family — Bloom Chiangmai Parent Portal</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:#FDFAF5;color:#2C2C2A;width:100%;}
+nav{display:flex;align-items:center;justify-content:space-between;padding:10px max(48px, calc((100% - 1200px) / 2 + 48px));background:#FDFAF5;border-bottom:1px solid #E8E3D8;}
+.logo{font-family:Georgia,serif;font-size:22px;font-weight:700;color:#2C2C2A;text-decoration:none;}
+.signout-link{font-size:13px;color:#888780;cursor:pointer;text-decoration:underline;}
+
+main{max-width:800px;margin:0 auto;padding:60px 24px 100px;min-height:60vh;}
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:1.8px;color:#534AB7;text-transform:uppercase;margin-bottom:14px;}
+h1{font-family:Georgia,serif;font-size:32px;font-weight:700;color:#2C2C2A;margin-bottom:8px;}
+.sub{font-size:15px;color:#5F5E5A;margin-bottom:40px;}
+
+.card{background:#F7F3EC;border:1px solid #E8E3D8;border-radius:12px;padding:28px;margin-bottom:24px;}
+.card h2{font-family:Georgia,serif;font-size:20px;font-weight:700;margin-bottom:20px;color:#2C2C2A;}
+
+.learner-row{display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-bottom:1px solid #E8E3D8;}
+.learner-row:last-child{border-bottom:none;}
+.learner-name{font-family:Georgia,serif;font-size:18px;font-weight:700;}
+.learner-meta{font-size:13px;color:#888780;margin-top:2px;}
+
+.link-tile{display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid #E8E3D8;border-radius:8px;padding:16px 20px;margin-bottom:12px;text-decoration:none;color:#2C2C2A;}
+.link-tile:hover{border-color:#534AB7;}
+.link-tile-name{font-family:Georgia,serif;font-size:16px;font-weight:700;}
+.link-tile-desc{font-size:13px;color:#888780;}
+.link-arrow{color:#534AB7;font-size:18px;}
+
+.loading{text-align:center;padding:80px 20px;color:#888780;font-size:14px;}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="https://learn2bloom.org" class="logo">Bloom Chiangmai</a>
+  <span class="signout-link" onclick="doLogout()">Sign out</span>
+</nav>
+
+<main>
+  <div id="loading" class="loading">Loading…</div>
+
+  <div id="content" style="display:none;">
+    <div class="eyebrow">Parent Portal</div>
+    <h1>Welcome, <span id="familyName"></span></h1>
+    <p class="sub">Here's what's on file for your family.</p>
+
+    <div class="card">
+      <h2>Your children</h2>
+      <div id="learnersList"></div>
+    </div>
+
+    <div class="card">
+      <h2>Quick links</h2>
+      <a class="link-tile" href="https://bloombrary.learn2bloom.org" target="_blank" rel="noopener">
+        <div>
+          <div class="link-tile-name">Bloombrary</div>
+          <div class="link-tile-desc">Browse and reserve books from our library</div>
+        </div>
+        <div class="link-arrow">&#8594;</div>
+      </a>
+      <a class="link-tile" href="https://bloomcalendar.learn2bloom.org" target="_blank" rel="noopener">
+        <div>
+          <div class="link-tile-name">Academic Calendar</div>
+          <div class="link-tile-desc">View term dates, school days, and holidays</div>
+        </div>
+        <div class="link-arrow">&#8594;</div>
+      </a>
+    </div>
+  </div>
+</main>
+
+<footer style="background:#F7F3EC;padding:22px max(48px, calc((100% - 1200px) / 2 + 48px)) 40px;border-top:1px solid #E8E3D8;">
+  <p style="text-align:center;font-size:12px;color:#888780;">© 2026 Bloom Chiangmai Learning Hub. All rights reserved.</p>
+</footer>
+
+<script>
+const SUPABASE_URL = 'https://ndlcfgkhxjoancdvmgmr.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_EzlLIeKJDqtMs0mKD0gfgA_C86iHZal';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+async function doLogout(){
+  await sb.auth.signOut();
+  window.location.href = 'login.html';
+}
+
+async function loadDashboard(){
+  const { data: { session } } = await sb.auth.getSession();
+  if(!session){
+    window.location.href = 'login.html';
+    return;
+  }
+
+  const { data: family, error: famErr } = await sb
+    .from('families')
+    .select('id, family_name')
+    .eq('auth_user_id', session.user.id)
+    .maybeSingle();
+
+  if(famErr || !family){
+    document.getElementById('loading').textContent = 'We could not find a family account linked to this login. Please contact the school.';
+    return;
+  }
+
+  document.getElementById('familyName').textContent = family.family_name || 'your family';
+
+  const { data: learners, error: learnersErr } = await sb
+    .from('students')
+    .select('first_name, last_name, class_group, student_id_code, status')
+    .eq('family_id', family.id)
+    .eq('status', 'enrolled');
+
+  const listEl = document.getElementById('learnersList');
+  if(learnersErr || !learners || !learners.length){
+    listEl.innerHTML = '<p style="color:#888780;font-size:14px;">No enrolled children found on this account yet.</p>';
+  } else {
+    listEl.innerHTML = learners.map(l => `
+      <div class="learner-row">
+        <div>
+          <div class="learner-name">${l.first_name} ${l.last_name}</div>
+          <div class="learner-meta">${l.class_group || 'Zone not set'} · ${l.student_id_code || 'No ID'}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('content').style.display = 'block';
+}
+
+loadDashboard();
+</script>
+
+</body>
+</html>

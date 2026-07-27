@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Sign In — Bloom Chiangmai Parent Portal</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:#FDFAF5;color:#2C2C2A;width:100%;}
+nav{display:flex;align-items:center;justify-content:center;padding:14px 20px;background:#FDFAF5;border-bottom:1px solid #E8E3D8;}
+.logo{font-family:Georgia,serif;font-size:22px;font-weight:700;color:#2C2C2A;text-decoration:none;}
+
+main{max-width:420px;margin:0 auto;padding:80px 24px 100px;}
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:1.8px;color:#534AB7;text-transform:uppercase;margin-bottom:14px;text-align:center;}
+h1{font-family:Georgia,serif;font-size:30px;font-weight:700;color:#2C2C2A;margin-bottom:8px;text-align:center;}
+.sub{font-size:15px;color:#5F5E5A;margin-bottom:36px;text-align:center;}
+
+.card{background:#F7F3EC;border:1px solid #E8E3D8;border-radius:12px;padding:32px;}
+label{display:block;font-size:12px;font-weight:600;color:#5F5E5A;margin-bottom:6px;}
+input{width:100%;padding:12px 14px;border:1px solid #E8E3D8;border-radius:8px;font-size:15px;margin-bottom:16px;background:#fff;}
+
+.btn-primary{width:100%;padding:14px;border:none;border-radius:8px;background:#534AB7;color:#fff;font-size:15px;font-weight:600;cursor:pointer;}
+.btn-primary:hover{background:#443c99;}
+.btn-primary:disabled{opacity:.6;cursor:default;}
+
+.error-msg{color:#B23A3A;font-size:13px;margin-top:12px;text-align:center;}
+.helper-link{display:block;text-align:center;margin-top:20px;font-size:13px;color:#534AB7;text-decoration:none;}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="https://learn2bloom.org" class="logo">Bloom Chiangmai</a>
+</nav>
+
+<main>
+  <div class="eyebrow">Parent Portal</div>
+  <h1>Sign in</h1>
+  <p class="sub">Access your family's Bloom Chiangmai account.</p>
+
+  <div class="card">
+    <label>Email</label>
+    <input type="email" id="loginEmail" placeholder="you@example.com">
+    <label>Password</label>
+    <input type="password" id="loginPassword" placeholder="Your password">
+    <button class="btn-primary" onclick="doLogin()" id="loginBtn">Sign in</button>
+    <div class="error-msg" id="loginError"></div>
+  </div>
+
+  <a href="index.html" class="helper-link">Need to activate a new Student ID? Register here</a>
+</main>
+
+<footer style="background:#F7F3EC;padding:22px max(48px, calc((100% - 1200px) / 2 + 48px)) 40px;border-top:1px solid #E8E3D8;">
+  <p style="text-align:center;font-size:12px;color:#888780;">© 2026 Bloom Chiangmai Learning Hub. All rights reserved.</p>
+</footer>
+
+<script>
+const SUPABASE_URL = 'https://ndlcfgkhxjoancdvmgmr.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_EzlLIeKJDqtMs0mKD0gfgA_C86iHZal';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+async function checkExistingSession(){
+  const { data: { session } } = await sb.auth.getSession();
+  if(session){
+    window.location.href = 'dashboard.html';
+  }
+}
+
+async function doLogin(){
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginError');
+  const btn = document.getElementById('loginBtn');
+  errEl.textContent = '';
+
+  if(!email || !password){
+    errEl.textContent = 'Please enter your email and password.';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Signing in…';
+
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+
+  if(error){
+    errEl.textContent = 'Incorrect email or password. Please try again.';
+    btn.disabled = false;
+    btn.textContent = 'Sign in';
+    return;
+  }
+
+  window.location.href = 'dashboard.html';
+}
+
+checkExistingSession();
+</script>
+
+</body>
+</html>
