@@ -73,6 +73,14 @@ h1{font-family:Georgia,serif;font-size:30px;font-weight:700;color:#2C2C2A;margin
     <div class="section-label" style="margin-top:0;">Learner details</div>
     <div class="form-grid">
       <div>
+        <label>First name</label>
+        <input type="text" id="regLearnerFirstName">
+      </div>
+      <div>
+        <label>Last name</label>
+        <input type="text" id="regLearnerLastName">
+      </div>
+      <div>
         <label>Date of birth</label>
         <input type="date" id="regDob">
       </div>
@@ -211,6 +219,8 @@ async function verifyCode(){
     verifiedActivationCode = activationCode;
 
     document.getElementById('learnerName').textContent = `${data.learner.first_name} ${data.learner.last_name}`;
+    document.getElementById('regLearnerFirstName').value = data.learner.first_name || '';
+    document.getElementById('regLearnerLastName').value = data.learner.last_name || '';
     document.getElementById('regDob').value = data.learner.date_of_birth || '';
     document.getElementById('regGender').value = data.learner.gender || '';
     document.getElementById('regNationality').value = data.learner.nationality || '';
@@ -269,6 +279,8 @@ async function completeRegistration(){
         student_id_code: verifiedStudentId,
         activation_code: verifiedActivationCode,
         password: password,
+        learner_first_name: document.getElementById('regLearnerFirstName').value.trim(),
+        learner_last_name: document.getElementById('regLearnerLastName').value.trim(),
         date_of_birth: document.getElementById('regDob').value,
         gender: document.getElementById('regGender').value,
         nationality: document.getElementById('regNationality').value.trim(),
