@@ -86,6 +86,14 @@ h1{font-family:Georgia,serif;font-size:32px;font-weight:700;color:#2C2C2A;margin
 
         <div class="detail-row"><div class="detail-label">Class / Zone</div><div id="lmClass"></div></div>
         <div class="detail-row"><div class="detail-label">Learner ID</div><div id="lmId"></div></div>
+        <div class="detail-row"><div class="detail-label">Date of birth</div><div id="lmDob"></div></div>
+        <div class="detail-row"><div class="detail-label">Gender</div><div id="lmGender"></div></div>
+        <div class="detail-row"><div class="detail-label">Nationality</div><div id="lmNationality"></div></div>
+        <div class="detail-row"><div class="detail-label">First language</div><div id="lmFirstLang"></div></div>
+        <div class="detail-row"><div class="detail-label">Other languages</div><div id="lmOtherLang"></div></div>
+        <div class="detail-row"><div class="detail-label">Current school</div><div id="lmCurrentSchool"></div></div>
+        <div class="detail-row"><div class="detail-label">Previous school</div><div id="lmPreviousSchool"></div></div>
+        <div class="detail-row"><div class="detail-label">Health / learning notes</div><div id="lmHealthNotes"></div></div>
 
         <p style="font-size:13px;color:#5F5E5A;margin:20px 0 12px;">
           Need to update something (name, class, medical info, etc.)? These details are managed by school staff. Let us know here and someone will follow up.
@@ -385,7 +393,7 @@ async function loadDashboard(){
 
   const { data: learners, error: learnersErr } = await sb
     .from('students')
-    .select('id, first_name, last_name, class_group, student_id_code, status')
+    .select('id, first_name, last_name, class_group, student_id_code, status, date_of_birth, intake_data')
     .eq('family_id', family.id)
     .eq('status', 'enrolled');
 
@@ -481,11 +489,20 @@ function openLearnerModal(learnerId){
   const l = (window._currentLearners || []).find(x => x.id === learnerId);
   if(!l) return;
   _currentLearnerId = learnerId;
+  const intake = l.intake_data || {};
 
   document.getElementById('lmName').textContent = `${l.first_name} ${l.last_name}`;
   document.getElementById('lmMeta').textContent = '';
   document.getElementById('lmClass').textContent = l.class_group || 'Zone not set';
   document.getElementById('lmId').textContent = l.student_id_code || 'No ID';
+  document.getElementById('lmDob').textContent = l.date_of_birth || '—';
+  document.getElementById('lmGender').textContent = intake.gender || '—';
+  document.getElementById('lmNationality').textContent = intake.nationality || '—';
+  document.getElementById('lmFirstLang').textContent = intake.first_language || '—';
+  document.getElementById('lmOtherLang').textContent = intake.other_languages || '—';
+  document.getElementById('lmCurrentSchool').textContent = intake.current_school || '—';
+  document.getElementById('lmPreviousSchool').textContent = intake.previous_school || '—';
+  document.getElementById('lmHealthNotes').textContent = intake.health_learning_notes || '—';
   document.getElementById('lmNoteInput').value = '';
   document.getElementById('lmNoteError').textContent = '';
   document.getElementById('lmNoteSuccess').style.display = 'none';
