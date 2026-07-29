@@ -485,6 +485,16 @@ if(new URLSearchParams(window.location.search).get('emailUpdated')){
 
 let _currentLearnerId = null;
 
+function computeAge(dobString){
+  const dob = new Date(dobString);
+  if(isNaN(dob)) return '—';
+  const today = new Date();
+  let age = today.getFullYear() - dob.getFullYear();
+  const monthDiff = today.getMonth() - dob.getMonth();
+  if(monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) age--;
+  return age;
+}
+
 function openLearnerModal(learnerId){
   const l = (window._currentLearners || []).find(x => x.id === learnerId);
   if(!l) return;
@@ -495,7 +505,7 @@ function openLearnerModal(learnerId){
   document.getElementById('lmMeta').textContent = '';
   document.getElementById('lmClass').textContent = l.class_group || 'Zone not set';
   document.getElementById('lmId').textContent = l.student_id_code || 'No ID';
-  document.getElementById('lmDob').textContent = l.date_of_birth || '—';
+  document.getElementById('lmDob').textContent = l.date_of_birth ? `${l.date_of_birth} (age ${computeAge(l.date_of_birth)})` : '—';
   document.getElementById('lmGender').textContent = intake.gender || '—';
   document.getElementById('lmNationality').textContent = intake.nationality || '—';
   document.getElementById('lmFirstLang').textContent = intake.first_language || '—';
