@@ -176,10 +176,23 @@ async function sendResetLink(){
   }
 }
 
+function getRedirectTarget(){
+  const params = new URLSearchParams(window.location.search);
+  const redirect = params.get('redirect');
+  if(!redirect || redirect === 'login.html') return 'dashboard.html';
+  try {
+    const url = new URL(redirect, window.location.origin);
+    if(url.hostname === 'learn2bloom.org' || url.hostname.endsWith('.learn2bloom.org')){
+      return url.href;
+    }
+  } catch {}
+  return 'dashboard.html';
+}
+
 async function checkExistingSession(){
   const { data: { session } } = await sb.auth.getSession();
   if(session){
-    window.location.href = 'dashboard.html';
+    window.location.href = getRedirectTarget();
   }
 }
 
@@ -209,7 +222,7 @@ async function doLogin(){
       return;
     }
 
-    window.location.href = 'dashboard.html';
+    window.location.href = getRedirectTarget();
   } catch(err){
     errEl.textContent = err.message || 'Incorrect Student ID or password. Please try again.';
     btn.disabled = false;
