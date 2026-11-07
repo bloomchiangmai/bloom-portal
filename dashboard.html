@@ -68,6 +68,20 @@ h1{font-family:Georgia,serif;font-size:32px;font-weight:700;color:#2C2C2A;margin
 <main>
   <div id="loading" class="loading">Loading…</div>
 
+  <div id="mustChange" style="display:none;max-width:420px;">
+    <div class="eyebrow">Parent Portal</div>
+    <h1>Please set a new password</h1>
+    <p class="sub">To keep your family's details safe, we need you to choose a new password before you continue. Please don't use your child's Student ID.</p>
+    <div class="form-grid" style="grid-template-columns:1fr;">
+      <div><label for="forceNewPassword">New password</label>
+      <input type="password" id="forceNewPassword" placeholder="At least 8 characters" autocomplete="new-password"></div>
+      <div><label for="forceConfirmPassword">Confirm password</label>
+      <input type="password" id="forceConfirmPassword" autocomplete="new-password"></div>
+    </div>
+    <p id="forceError" style="color:#A23F1C;font-size:13px;min-height:18px;margin:0 0 10px;"></p>
+    <button class="btn-primary-small" id="forceBtn" onclick="submitForcedPassword()">Save new password</button>
+  </div>
+
   <div id="content" style="display:none;">
     <div class="eyebrow">Parent Portal</div>
     <h1>Welcome, <span id="familyName"></span></h1>
@@ -311,6 +325,33 @@ async function changeEmail(){
   }
 }
 
+async function submitForcedPassword(){
+  const errEl = document.getElementById('forceError');
+  const btn = document.getElementById('forceBtn');
+  const pass = document.getElementById('forceNewPassword').value;
+  const confirm = document.getElementById('forceConfirmPassword').value;
+  errEl.textContent = '';
+  if(pass.length < 8){ errEl.textContent = 'Password must be at least 8 characters.'; return; }
+  if(pass !== confirm){ errEl.textContent = 'Passwords do not match.'; return; }
+  btn.disabled = true; btn.textContent = 'Saving…';
+  const { error } = await sb.auth.updateUser({ password: pass });
+  if(error){
+    btn.disabled = false; btn.textContent = 'Save new password';
+    errEl.textContent = error.message || 'Could not update password. Please try again.';
+    return;
+  }
+  const { data: res } = await sb.rpc('family_password_changed');
+  btn.disabled = false; btn.textContent = 'Save new password';
+  if(!res || !res.ok){
+    errEl.textContent = 'Please choose a password that is not your child\'s Student ID.';
+    return;
+  }
+  document.getElementById('forceNewPassword').value = '';
+  document.getElementById('forceConfirmPassword').value = '';
+  document.getElementById('loading').style.display = 'block';
+  loadDashboard();
+}
+
 async function changePassword(){
   const errEl = document.getElementById('passwordChangeError');
   const successEl = document.getElementById('passwordChangeSuccess');
@@ -343,6 +384,7 @@ async function changePassword(){
     return;
   }
 
+  await sb.rpc('family_password_changed');
   document.getElementById('newPasswordInput').value = '';
   document.getElementById('confirmPasswordInput').value = '';
   successEl.textContent = 'Password updated.';
@@ -363,6 +405,16 @@ async function loadDashboard(){
     window.location.href = 'login.html';
     return;
   }
+
+  // Families whose password was set to the Student ID must choose a new one first.
+  const { data: mustChange } = await sb.rpc('family_must_change_password');
+  if(mustChange){
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('content').style.display = 'none';
+    document.getElementById('mustChange').style.display = 'block';
+    return;
+  }
+  document.getElementById('mustChange').style.display = 'none';
 
   const { data: family, error: famErr } = await sb
     .from('families')

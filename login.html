@@ -222,7 +222,9 @@ async function doLogin(){
       return;
     }
 
-    window.location.href = getRedirectTarget();
+    // A family that must change its password goes to the portal first, wherever the redirect points.
+    const { data: mustChange } = await sb.rpc('family_must_change_password');
+    window.location.href = mustChange ? 'dashboard.html' : getRedirectTarget();
   } catch(err){
     errEl.textContent = err.message || 'Incorrect Student ID or password. Please try again.';
     btn.disabled = false;
