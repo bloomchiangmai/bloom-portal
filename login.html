@@ -153,21 +153,23 @@ async function sendResetLink(){
   btn.textContent = 'Sending…';
 
   try {
-    const email = await resolveEmailFromStudentId(studentId);
-
-    const { error } = await sb.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin + '/reset-password.html'
+    // The server sends the link; the page never learns the email for a Student ID.
+    const resp = await fetch(`${SUPABASE_URL}/functions/v1/id-sign-in`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kind: 'parent', action: 'reset', id: studentId })
     });
 
     btn.disabled = false;
     btn.textContent = 'Send reset link';
 
-    if(error){
-      errEl.textContent = error.message || 'Could not send reset email. Please try again.';
+    if(!resp.ok){
+      const o = await resp.json().catch(()=>({}));
+      errEl.textContent = o.error || 'Could not send reset email. Please try again.';
       return;
     }
 
-    successEl.textContent = 'A reset link has been sent to the contact email on file for this account.';
+    successEl.textContent = 'If that Student ID has an account, a reset link is on its way to the contact email on file.';
     successEl.style.display = 'block';
   } catch(err){
     btn.disabled = false;
@@ -212,8 +214,16 @@ async function doLogin(){
   btn.textContent = 'Signing in…';
 
   try {
-    const email = await resolveEmailFromStudentId(studentId);
-    const { error } = await sb.auth.signInWithPassword({ email, password });
+    // Sign-in happens on the server, so the page never learns which email belongs to a Student ID.
+    const resp = await fetch(`${SUPABASE_URL}/functions/v1/id-sign-in`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kind: 'parent', id: studentId, password })
+    });
+    const out = await resp.json().catch(()=>({}));
+    const { error } = (resp.ok && out.access_token)
+      ? await sb.auth.setSession({ access_token: out.access_token, refresh_token: out.refresh_token })
+      : { error: new Error(out.error || 'Incorrect Student ID or password. Please try again.') };
 
     if(error){
       errEl.textContent = 'Incorrect Student ID or password. Please try again.';
